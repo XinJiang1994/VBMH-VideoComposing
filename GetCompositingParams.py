@@ -209,6 +209,9 @@ class Video(QWidget):
         self.sl_x_offset.setGeometry(1200, 580+group_pos_v, 30, 180)
         self.sl_x_offset.sliderMoved.connect(self.sl_x_offset_moved)
 
+        # self.max_x_offset = None
+        # self.max_y_offset = None
+
         # ******************************************* #
 
         self.controller = Controller.TIMER
@@ -391,8 +394,10 @@ class Video(QWidget):
         text = self.e_zoom_rate.text()
         if text is not None and text != '' and text != ' ':
             val = int(text)
-            val = 100 if val > 100 else val
-            val = 0 if val < 0 else val
+            print('zoom_rate: ', val)
+            val = 100 if val > 200 else val
+            val = 1 if val < 1 else val
+            self.e_zoom_rate.setText(str(val))
             self.compositingParams['zoom_rate'] = val
             self.sl_zoom.setValue(val)
             self.openFrame()
@@ -407,8 +412,11 @@ class Video(QWidget):
         text = self.e_x_offset.text()
         if text is not None and text != '' and text != ' ' and text != '-':
             val = int(text)
+            val = self.sl_x_offset.maximum() if val > self.sl_x_offset.maximum() else val
+            val = -self.sl_x_offset.maximum() if val < -self.sl_x_offset.maximum() else val
+            self.e_x_offset.setText(str(val))
             self.compositingParams['x_offset'] = val
-            self.sl_x_offset.setValue(val)
+            self.sl_x_offset.setValue(-val)
             self.openFrame()
 
     def sl_y_offset_moved(self):
@@ -420,6 +428,9 @@ class Video(QWidget):
         text = self.e_y_offset.text()
         if text is not None and text != '' and text != ' ' and text != '-':
             val = int(text)
+            val = self.sl_y_offset.maximum() if val > self.sl_y_offset.maximum() else val
+            val = -self.sl_y_offset.maximum() if val < -self.sl_y_offset.maximum() else val
+            self.e_y_offset.setText(str(val))
             self.compositingParams['y_offset'] = val
             self.sl_y_offset.setValue(val)
             self.openFrame()
