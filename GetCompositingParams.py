@@ -395,7 +395,7 @@ class Video(QWidget):
         if text is not None and text != '' and text != ' ':
             val = int(text)
             print('zoom_rate: ', val)
-            val = 100 if val > 200 else val
+            val = 100 if val > 300 else val
             val = 1 if val < 1 else val
             self.e_zoom_rate.setText(str(val))
             self.compositingParams['zoom_rate'] = val
