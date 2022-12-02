@@ -55,3 +55,54 @@ def composite(frame1, frame2, params):
     bg[idx_x1_1:idx_x1_2, idx_y1_1:idx_y1_2] = frame2[idx_x2_1:idx_x2_2, idx_y2_1:idx_y2_2]
     frame1[frame1 == 0] = bg[frame1 == 0]
     return frame1
+
+
+def merge_pha(pha_target, pha_distract):
+    '''
+    hint:
+    1. Firstly, define a new variable pha_merged, and let pha_merged = pha_distract.copy(), think about it, why we use .copy() here.
+    2. Replace the pha_merged vaules with pha_target values where pha_target>0,
+       for example: pha_merged[pha_target>0] = pha_target[pha_target>0]
+    3. return pha_merged
+    '''
+    pass
+
+
+def composite_video(frame_target, frame_distract, pha_target, pha_distract):
+    '''
+    1. 去除frame_target的背景（借助pha_target），存储在 frame_target_new 中；
+    2. 去除frame_distract的背景（借助pha_distract）存储在 frame_distract_new 中；
+    3. 定义一个与新变量： frame_composited=frame_distract_new
+    4. 将 frame_composited 中对应 pha_target>0 的部分的值替换成 frame_target_new 的值，
+       例如：frame_composited[ha_target>0] = frame_target_new[ha_target>0]
+    5. 返回 frame_composited
+    '''
+    pass
+
+
+def composite_with_pha(frame_target, pha_target, frame_distract, pha_distract, params):
+    '''
+    frame_target: a frame from target video, it's a numpy array with shape of (H,W,C), 
+                  where H is image height, W is width, C is channel.
+                  The value of frame_target is 0-255.
+
+    pha_target: The alpha matte corresponding to the frame_target. The shape is (H,W,C) which is the same with frame_target.
+                It's a float array and the value is 0.0-1.0
+
+    frame_distract: distracting frame
+
+    pha_distract: distracting alpha matte
+
+    params: the compositing params, 
+            for example: {"zoom_rate": 40, "x_offset": 650, "y_offset": 300, "distract": "0002.mp4"}
+
+
+    ToDo: 
+    1. generate the merged alpha matte using the given params, see the above function: merge_pha(pha_target, pha_distract)
+    2. the composited frame using the given params, see the above function composite_video(frame_target, frame_distract, pha_target, pha_distract).
+
+    '''
+    merged_pha = merge_pha(pha_target, pha_distract)
+    composited_frame = composite_video(
+        frame_target, frame_distract, pha_target, pha_distract)
+    return composited_frame, merged_pha
