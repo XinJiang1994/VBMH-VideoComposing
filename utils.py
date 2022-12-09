@@ -65,7 +65,10 @@ def merge_pha(pha_target, pha_distract):
        for example: pha_merged[pha_target>0] = pha_target[pha_target>0]
     3. return pha_merged
     '''
-    pass
+    pha_merged = pha_distract.copy()
+    pha_merged[pha_target>0] = pha_target[pha_target>0]
+    return pha_merged
+
 
 
 def composite_video(frame_target, frame_distract, pha_target, pha_distract):
@@ -77,7 +80,13 @@ def composite_video(frame_target, frame_distract, pha_target, pha_distract):
        例如：frame_composited[ha_target>0] = frame_target_new[ha_target>0]
     5. 返回 frame_composited
     '''
-    pass
+    frame_target_new = frame_target.copy()
+    frame_target_new[pha_target==0] = 0
+    frame_distract_new = frame_distract.copy()
+    frame_distract_new[pha_distract==0] = 0
+    frame_composited = frame_distract_new
+    frame_composited[pha_target>0] = frame_target_new[pha_target>0]
+    return frame_composited
 
 
 def composite_with_pha(frame_target, pha_target, frame_distract, pha_distract, params):
