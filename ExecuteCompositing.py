@@ -11,7 +11,7 @@ import os
 from enum import Enum
 import numpy as np
 
-from utils import composite, composite_with_pha
+from utils import composite, composite4exec
 
 
 class Controller(Enum):
@@ -27,6 +27,7 @@ class Video(QWidget):
 
         self.frame = None  # 存图片
         self.frame2 = None
+        self.frame1 = None
         self.frame_pha = None
         self.frame_pha2 = None
         self.frame_count_main = 0
@@ -99,7 +100,7 @@ class Video(QWidget):
         self.btn_preview.clicked.connect(self.change_playing_status)
         # 关闭视频按钮
         self.btn_stop = QPushButton(self)
-        self.btn_stop.setText("Stop")
+        self.btn_stop.setText("Save Results")
         self.btn_stop.move(6*pos_unit+ps_group_x_pos, 740)
         self.btn_stop.clicked.connect(self.slotStop)
 
@@ -119,21 +120,23 @@ class Video(QWidget):
     def read_compositingParams(self):
         json_filename = os.path.join(
             'Params', self.current_target.replace('.mp4', '.json'))
-        self.params = json.load(json_filename)
+        file_json = open(json_filename)
+        self.params = json.load(file_json)
 
     def slotStart(self):
         """ Slot function to start the progamme
             """
-        self.init_compositingParams()
         # videoName, _ = QFileDialog.getOpenFileName(
         #     self, "Open", self.root, "*.mp4;;All Files(*)")
         target_vname0 = self.target_videos.currentText()
         self.current_target = target_vname0
+        self.read_compositingParams()
+
         target_vname = os.path.join(self.root, 'fgr', target_vname0)
         target_pha_vname = os.path.join(self.root, 'pha', target_vname0)
-        distract_vname = self.params['distract']
-        distract_vname = os.path.join(self.root, 'fgr', distract_vname)
-        distract_pha_vname = os.path.join(self.root, 'pha', distract_vname)
+        distract_vname0 = self.params['distract']
+        distract_vname = os.path.join(self.root, 'fgr', distract_vname0)
+        distract_pha_vname = os.path.join(self.root, 'pha', distract_vname0)
 
         if self.cap != None:
             self.cap.release()
@@ -148,8 +151,8 @@ class Video(QWidget):
             self.cap = cv2.VideoCapture(target_vname)
             self.cap_pha = cv2.VideoCapture(target_pha_vname)
             self.frame_count_main = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            self.target_w = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            self.target_h = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             self.label.setText(target_vname)
             self.sl.setMaximum(self.frame_count_main-1)
             self.frame_idx = 0
@@ -160,7 +163,25 @@ class Video(QWidget):
 
             self.frame_count_distract = int(
                 self.cap_distract.get(cv2.CAP_PROP_FRAME_COUNT))
+
+            self.init_writer(target_vname0)
+
             self.openFrame()
+
+    def init_writer(self, targe_name):
+        dir_fgr_com = os.path.join(self.root, 'fgr_com')
+        dir_pha_com = os.path.join(self.root, 'pha_com')
+        if not os.path.exists(dir_fgr_com):
+            os.mkdir(dir_fgr_com)
+        if not os.path.exists(dir_pha_com):
+            os.mkdir(dir_pha_com)
+        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        fps = 30.0
+        save_path_v = os.path.join(dir_fgr_com, targe_name)
+        save_path_pha = os.path.join(dir_pha_com, targe_name)
+        v_size = (self.target_w, self.target_h)
+        self.video_writer = cv2.VideoWriter(save_path_v, fourcc, fps, v_size)
+        self.pha_writer = cv2.VideoWriter(save_path_pha, fourcc, fps, v_size)
 
     def slotStop(self):
         """ Slot function to stop the programme
@@ -179,23 +200,11 @@ class Video(QWidget):
                 self.cap_distract.release()
             if self.cap_pha != None:
                 self.cap_pha.release()
+            self.video_writer.release()
+            self.pha_writer.release()
         else:
             Warming = QMessageBox.warning(
                 self, "Warming", "Push the left upper corner button to Quit.", QMessageBox.Yes)
-
-    def save_params(self):
-
-        self.compositingParams['distract'] = self.distracting_videos.currentText(
-        )
-        save_folder = 'Params'
-        if not os.path.exists(save_folder):
-            os.mkdir(save_folder)
-        fname = os.path.join(
-            save_folder, self.target_videos.currentText().replace('.mp4', '')+'.json')
-        with open(fname, 'w') as fp:
-            json.dump(self.compositingParams, fp)
-        QMessageBox.about(self, "Information",
-                          "Save success!")
 
     def openFrame(self):
         """ Slot function to capture frame and process it
@@ -215,11 +224,11 @@ class Video(QWidget):
 
             self.sl.setValue(self.frame_idx)
             # print('----', self.sl.value())
-            ret, self.frame = self.cap.read()
-            ret0, self.frame_pha = self.cap_pha.read()
+            ret0, self.frame1 = self.cap.read()
+            ret1, self.frame_pha1 = self.cap_pha.read()
             ret2, self.frame2 = self.cap_distract.read()
             ret3, self.frame_pha2 = self.cap_pha_distract.read()
-            if ret and ret2 and ret0 and ret3:
+            if ret0 and ret1 and ret2 and ret3:
                 frame1 = cv2.cvtColor(self.frame1, cv2.COLOR_BGR2RGB)
                 frame2 = cv2.cvtColor(self.frame2, cv2.COLOR_BGR2RGB)
 
@@ -238,10 +247,11 @@ class Video(QWidget):
                 self.label_distract_preview.setPixmap(
                     QPixmap.fromImage(q_image_d))
 
-                frame, pha_merged = composite_with_pha(
-                    frame1, self.frame_pha/255, frame2, self.frame_pha2, self.compositingParams)
+                frame, pha_merged = composite4exec(
+                    frame1,  frame2, self.frame_pha1/255, self.frame_pha2/255, self.params)
 
                 # write the result to mp4
+                self.save_results(frame, pha_merged)
 
                 #
 
@@ -263,6 +273,15 @@ class Video(QWidget):
                 self.cap_pha.release()
                 self.cap_pha_distract.release()
                 self.timer_camera.stop()   # 停止计时器
+
+    def save_results(self, frame, pha_merged):
+        '''
+            frame: a uint8 array, the value of which is from 0 to 255
+            pha_merged: a float array, , the value of which is from 0 to 1
+        '''
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        self.video_writer.write(frame)
+        self.pha_writer.write(np.uint8(pha_merged*255))
 
     def change_playing_status(self):
         if self.cap is None or self.cap_pha is None or self.cap_distract is None:
