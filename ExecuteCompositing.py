@@ -209,18 +209,19 @@ class Video(QWidget):
     def openFrame(self):
         """ Slot function to capture frame and process it
             """
+
         if self.cap is None or self.cap_pha is None or self.cap_distract is None:
             QMessageBox.about(self, "Operate Failed",
                               "Please open video first!")
             return
 
-        if (self.cap.isOpened() and self.cap_pha.isOpened() and self.cap_distract.isOpened() and self.cap_pha_distract.isOpened()):
+        if self.cap.isOpened() and self.cap_pha.isOpened() and self.cap_distract.isOpened() and self.cap_pha_distract.isOpened():
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_idx)
             self.cap_pha.set(cv2.CAP_PROP_POS_FRAMES, self.frame_idx)
             self.cap_distract.set(cv2.CAP_PROP_POS_FRAMES,
-                                  self.frame_idx % self.frame_count_distract)
+                                  self.frame_idx % (self.frame_count_distract-1))  # don't let it to the end or the cap will be closed
             self.cap_pha_distract.set(cv2.CAP_PROP_POS_FRAMES,
-                                      self.frame_idx % self.frame_count_distract)
+                                      self.frame_idx % (self.frame_count_distract-1))
 
             self.sl.setValue(self.frame_idx)
             # print('----', self.sl.value())
