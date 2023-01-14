@@ -1,16 +1,12 @@
 import json
 import sys
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-
 import cv2
-from PyQt5.QtCore import QTimer
 import os
 from enum import Enum
 import numpy as np
 from tqdm import tqdm
+import time
+
 
 from utils import composite, composite4exec
 
@@ -107,6 +103,7 @@ class Video():
             exit(1)
         self.frame_idx = 0
         while self.cap.isOpened() and self.cap_pha.isOpened() and self.cap_distract.isOpened() and self.cap_pha_distract.isOpened():
+
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_idx)
             self.cap_pha.set(cv2.CAP_PROP_POS_FRAMES, self.frame_idx)
             self.cap_distract.set(cv2.CAP_PROP_POS_FRAMES,
@@ -122,8 +119,10 @@ class Video():
             if ret0 and ret1 and ret2 and ret3:
                 frame1 = cv2.cvtColor(self.frame1, cv2.COLOR_BGR2RGB)
                 frame2 = cv2.cvtColor(self.frame2, cv2.COLOR_BGR2RGB)
+                st = time.time()
                 frame, pha_merged = composite4exec(
                     frame1,  frame2, self.frame_pha1/255, self.frame_pha2/255, self.params)
+                print('com time cost: ', time.time()-st)
                 # write the result to mp4
                 self.save_results(frame, pha_merged)
                 if not run_on_background:
@@ -159,8 +158,7 @@ class Video():
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    run_on_background = True
+    run_on_background = False
 
     v_root = '/Users/jiangxin/Project/Dataset/VideoMatte240K/train'
     target_vnames = [
